@@ -1,0 +1,50 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Samplewise Eval",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/sem2ins/samplewise_evaluation.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--groundtruth_path",
+                "/mnt/cluster-data-all/t006d/nnunetv2/test_data_folder/test_set_SPACE/labelsTs_Sequence_SPACE",
+                "--prediction_path",
+                "/mnt/cluster-data-all/t006d/nnunetv2/test_data_folder/test_set_SPACE/pred201",
+                "--classes_of_interest",
+                "1"
+            ]
+        },
+        {
+            "name": "Run Whole Configuration",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/sem2ins/run_evaluation.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--groundtruth_path",
+                "/mnt/cluster-data-all/t006d/nnunetv2/test_data_folder/brain_tr_gammaknife/labelsTr",
+                "--prediction_path",
+                "/mnt/cluster-data-all/t006d/nnunetv2/test_data_folder/brain_tr_gammaknife/task561_mmm_15",
+                "--classes_of_interest",
+                "1",
+                "--n_processes",
+                "1"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,11 @@
+batchgenerators
+matplotlib
+numpy
+pandas
+
+scikit-image
+scipy
+seaborn
+SimpleITK
+openpyxl
+xlsxwriter
