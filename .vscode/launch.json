@@ -45,6 +45,16 @@
                 "--n_processes",
                 "1"
             ]
+        },
+        {
+            "name": "Run Plotting",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/sem2ins/visualizations/lesionwise_casewise.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+            ]
         }
     ]
 }

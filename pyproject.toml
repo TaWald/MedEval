@@ -3,12 +3,25 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sem2ins"
+name = "nneval"
 version = "0.0"
 authors = [{name = "Tassilo Wald", email = "tassilo.wald@dkfz-heidelberg.de"}]
 description = "Takes nnU-Net and provides evaluation for a clinical publication from it. Inclduing instance-wise evaluation."
-
-dynamic = ["dependencies"]
+dependencies = [
+    'batchgenerators',
+    'matplotlib',
+    'numpy',
+    'pandas',
+    'scikit-image',
+    'scipy',
+    'seaborn',
+    'SimpleITK',
+    'openpyxl',
+    'xlsxwriter',
+    'statannotations',
+    'monai',
+    'tqdm'
+]
 
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,16 +30,17 @@ classifiers = [
     "License :: GNU GENERAL PUBLIC LICENSE",
 ]
 
-
 [tool.black]
 line-length = 118
 
 [project.urls]
-"Homepage" = "https://git.dkfz.de/mic/personal/group2/tassilow/sem2ins"
+"Homepage" = "https://git.dkfz.de/mic/personal/group2/all/2instance"
 
+[tool.pytest.ini_options]
+python_functions = ["test_", "it_", "and_", "but_", "they_"]
+python_files = ["test_*.py",]
+testpaths = ["tests",]
 
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
 
 # [project.scripts]
-# my-script = "my_package.module:function"
+# my-script = "sem2ins.scripts.evaluate:main"
