@@ -1,5 +1,47 @@
 from pathlib import Path
 from toinstance.predict import create_instance
+import argparse
+from pathlib import Path
+from toinstance.predict import create_instance
+
+
+def create_instances_entrypoint():
+    parser = argparse.ArgumentParser(description="Generate instances.")
+    parser.add_argument("--semantic_pd_path", type=str, help="Path to semantic predictions.")
+    parser.add_argument("--semantic_gt_path", type=str, help="Path to semantic ground truth.")
+    parser.add_argument("--output_pd_path", type=str, help="Path to output predictions.")
+    parser.add_argument("--output_gt_path", type=str, help="Path to output ground truth.")
+    args = parser.parse_args()
+
+    semantic_pd_path = Path(args.semantic_pd_path)
+    semantic_gt_path = Path(args.semantic_gt_path)
+    output_pd_path = Path(args.output_pd_path)
+    output_gt_path = Path(args.output_gt_path)
+
+    instance_generation(
+        semantic_pd_path=semantic_pd_path,
+        semantic_gt_path=semantic_gt_path,
+        output_pd_path=output_pd_path,
+        output_gt_path=output_gt_path,
+    )
+
+
+def instance_generation(semantic_pd_path: Path, semantic_gt_path: Path, output_pd_path: Path, output_gt_path: Path):
+    """Exemplary call to instances."""
+    create_instance(
+        input_path=semantic_pd_path,
+        output_dir=output_pd_path,
+        overwrite=True,  # Set to true to show it actually creates stuff
+    )
+    create_instance(
+        input_path=semantic_gt_path,
+        output_dir=output_gt_path,
+        overwrite=True,  # Set to true to show it actually creates stuff
+    )
+
+
+if __name__ == "__main__":
+    create_instances_entrypoint()
 
 
 def instance_generation(semantic_pd_path: Path, semantic_gt_path: Path, output_pd_path: Path, output_gt_path: Path):

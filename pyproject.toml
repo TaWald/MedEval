@@ -42,5 +42,7 @@ python_files = ["test_*.py",]
 testpaths = ["tests",]
 
 
-# [project.scripts]
-# my-script = "sem2ins.scripts.evaluate:main"
+[project.scripts]
+nneval_semantic_eval = "nneval.scripts.evaluate_semantic:semantic_evaluation_entrypoint"
+nneval_instance_eval = "nneval.scripts.evaluate_instance:instance_evaluation_entrypoint"
+nneval_create_instances = "nneval.scripts.generate_instances:create_instances_entrypoint"
