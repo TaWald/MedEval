@@ -1,14 +1,10 @@
-from argparse import ArgumentParser
 from pathlib import Path
 from typing import Sequence
-from nneval.evaluate.semantic_eval import evaluate_semantic_results
 
+from nneval.evaluate.semantic_eval import evaluate_semantic_results, get_samplewise_statistics
 from nneval.utils.datastructures import SemanticResult
-import pandas as pd
-from nneval.utils.io import export_results, get_matching_semantic_pairs
-from nneval.exporting import export_semantic
-
-
+from nneval.utils.io import export_results, get_matching_semantic_pairs, save_json
+from loguru import logger
 
 
 def semantic_evaluation(
@@ -27,12 +23,16 @@ def semantic_evaluation(
         None
     """
     # ------------------------- Get all Cases to evaluate ------------------------ #
+    logger.info("Get all matching semantic pairs to evaluate.")
     semantic_pairs = get_matching_semantic_pairs(gt_path=semantic_gt_path, pd_path=semantic_pd_path)
+    logger.info(f"Found {len(semantic_pairs)} matching semantic pairs to evaluate.")
     # ----------- Evaluate Cases for all class ids and collect metrics ----------- #
+    logger.info("Evaluating all semantic values.")
     eval: list[SemanticResult] = evaluate_semantic_results(semantic_pairs, classes_of_interest)
     # ------------------------- Save the results ------------------------- #
     export_results(eval, output_path)
-    pass
+    aggregated_results = get_samplewise_statistics(eval)
+    save_json(aggregated_results, output_path / "aggregated_results.json")
 
 
 if __name__ == "__main__":

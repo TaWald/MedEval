@@ -9,6 +9,8 @@ from typing import Sequence
 import SimpleITK as sitk
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
+
 from nneval.utils.datastructures import SemanticPair, SemanticResult
 from nneval.utils.io import get_array_from_image
 from nneval.utils.parser import get_samplewise_eval_parser
@@ -77,55 +79,99 @@ def samplewise_eval(
     )
 
 
+def confidence_intervals(vals, confidence_level=0.95) -> tuple:
+    """
+    Calculates the 95% CI for a given list of values.
+    Especially sued for Sensitivity, PPV, F1-Scores.
+    """
+    z_score = norm.ppf((1 + confidence_level) / 2)
+    non_nan_vals = [val for val in vals if not np.isnan(val)]
+    N = len(non_nan_vals)
+    mean = np.mean(non_nan_vals)
+    SEM = np.std(non_nan_vals) / np.sqrt(N)
+    bounds = (float(mean - z_score * SEM), float(mean + z_score * SEM))
+
+    return bounds
+
+
 def get_samplewise_statistics(
-    samplewise_results: list[dict],
+    samplewise_results: list[SemanticResult],
+    classes_of_interest: Sequence[int] = (1,),
 ) -> dict:
-    return (
-        {
-            "dice": {
-                "mean": float(np.nanmean([entry["dice"] for entry in samplewise_results])),
-                "std": float(np.nanstd([entry["dice"] for entry in samplewise_results])),
-                "q1": float(np.nanquantile([entry["dice"] for entry in samplewise_results], 0.25)),
-                "q2": float(np.nanquantile([entry["dice"] for entry in samplewise_results], 0.5)),
-                "q3": float(np.nanquantile([entry["dice"] for entry in samplewise_results], 0.75)),
+    """
+    Calculate sample-wise statistics for semantic evaluation.
+
+    Args:
+        samplewise_results (list[SemanticResult]): A list of SemanticResult objects containing the evaluation results for each sample.
+        classes_of_interest (Sequence[int], optional): A sequence of class IDs for which to calculate the statistics. Defaults to (1,).
+
+    Returns:
+        dict: A dictionary containing the sample-wise statistics for each class of interest.
+
+    """
+    all_results = {}
+    for coi in classes_of_interest:
+        res_oi = [entry for entry in samplewise_results if entry.class_id == coi]
+        all_results[str(coi)] = (
+            {
+                "dice": {
+                    "mean": float(np.nanmean([entry.dice for entry in res_oi])),
+                    "std": float(np.nanstd([entry.dice for entry in res_oi])),
+                    "lower_CI95": confidence_intervals([entry.dice for entry in res_oi])[0],
+                    "upper_CI95": confidence_intervals([entry.dice for entry in res_oi])[1],
+                    "q1": float(np.nanquantile([entry.dice for entry in res_oi], 0.25)),
+                    "q2": float(np.nanquantile([entry.dice for entry in res_oi], 0.5)),
+                    "q3": float(np.nanquantile([entry.dice for entry in res_oi], 0.75)),
+                },
+                "iou": {
+                    "mean": float(np.nanmean([entry.iou for entry in res_oi])),
+                    "std": float(np.nanstd([entry.iou for entry in res_oi])),
+                    "lower_CI95": confidence_intervals([entry.iou for entry in res_oi])[0],
+                    "upper_CI95": confidence_intervals([entry.iou for entry in res_oi])[1],
+                    "q1": float(np.nanquantile([entry.iou for entry in res_oi], 0.25)),
+                    "q2": float(np.nanquantile([entry.iou for entry in res_oi], 0.5)),
+                    "q3": float(np.nanquantile([entry.iou for entry in res_oi], 0.75)),
+                },
+                "gt_volume_mm3": {
+                    "mean": float(np.nanmean([entry.gt_volume for entry in res_oi])),
+                    "lower_CI95": confidence_intervals([entry.gt_volume for entry in res_oi])[0],
+                    "upper_CI95": confidence_intervals([entry.gt_volume for entry in res_oi])[1],
+                    "std": float(np.nanstd([entry.gt_volume for entry in res_oi])),
+                    "q1": float(np.nanquantile([entry.gt_volume for entry in res_oi], 0.25)),
+                    "q2": float(np.nanquantile([entry.gt_volume for entry in res_oi], 0.5)),
+                    "q3": float(np.nanquantile([entry.gt_volume for entry in res_oi], 0.75)),
+                },
+                "pd_volume_mm3": {
+                    "mean": float(np.nanmean([entry.pd_volume for entry in res_oi])),
+                    "lower_CI95": confidence_intervals([entry.pd_volume for entry in res_oi])[0],
+                    "upper_CI95": confidence_intervals([entry.pd_volume for entry in res_oi])[1],
+                    "std": float(np.nanstd([entry.pd_volume for entry in res_oi])),
+                    "q1": float(np.nanquantile([entry.pd_volume for entry in res_oi], 0.25)),
+                    "q2": float(np.nanquantile([entry.pd_volume for entry in res_oi], 0.5)),
+                    "q3": float(np.nanquantile([entry.pd_volume for entry in res_oi], 0.75)),
+                },
+                "sensitivity": {
+                    "mean": float(np.nanmean([entry.recall for entry in res_oi])),
+                    "lower_CI95": confidence_intervals([entry.recall for entry in res_oi])[0],
+                    "upper_CI95": confidence_intervals([entry.recall for entry in res_oi])[1],
+                    "std": float(np.nanstd([entry.recall for entry in res_oi])),
+                    "q1": float(np.nanquantile([entry.recall for entry in res_oi], 0.25)),
+                    "q2": float(np.nanquantile([entry.recall for entry in res_oi], 0.5)),
+                    "q3": float(np.nanquantile([entry.recall for entry in res_oi], 0.75)),
+                },
+                "precision": {
+                    "mean": float(np.nanmean([entry.precision for entry in res_oi])),
+                    "lower_CI95": confidence_intervals([entry.precision for entry in res_oi])[0],
+                    "upper_CI95": confidence_intervals([entry.precision for entry in res_oi])[1],
+                    "std": float(np.nanstd([entry.precision for entry in res_oi])),
+                    "q1": float(np.nanquantile([entry.precision for entry in res_oi], 0.25)),
+                    "q2": float(np.nanquantile([entry.precision for entry in res_oi], 0.5)),
+                    "q3": float(np.nanquantile([entry.precision for entry in res_oi], 0.75)),
+                },
             },
-            "iou": {
-                "mean": float(np.nanmean([entry["iou"] for entry in samplewise_results])),
-                "std": float(np.nanstd([entry["iou"] for entry in samplewise_results])),
-                "q1": float(np.nanquantile([entry["iou"] for entry in samplewise_results], 0.25)),
-                "q2": float(np.nanquantile([entry["iou"] for entry in samplewise_results], 0.5)),
-                "q3": float(np.nanquantile([entry["iou"] for entry in samplewise_results], 0.75)),
-            },
-            "gt_volume_mm3": {
-                "mean": float(np.nanmean([entry["gt_volume_mm3"] for entry in samplewise_results])),
-                "std": float(np.nanstd([entry["gt_volume_mm3"] for entry in samplewise_results])),
-                "q1": float(np.nanquantile([entry["gt_volume_mm3"] for entry in samplewise_results], 0.25)),
-                "q2": float(np.nanquantile([entry["gt_volume_mm3"] for entry in samplewise_results], 0.5)),
-                "q3": float(np.nanquantile([entry["gt_volume_mm3"] for entry in samplewise_results], 0.75)),
-            },
-            "pd_volume_mm3": {
-                "mean": float(np.nanmean([entry["pd_volume_mm3"] for entry in samplewise_results])),
-                "std": float(np.nanstd([entry["pd_volume_mm3"] for entry in samplewise_results])),
-                "q1": float(np.nanquantile([entry["pd_volume_mm3"] for entry in samplewise_results], 0.25)),
-                "q2": float(np.nanquantile([entry["pd_volume_mm3"] for entry in samplewise_results], 0.5)),
-                "q3": float(np.nanquantile([entry["pd_volume_mm3"] for entry in samplewise_results], 0.75)),
-            },
-            "sensitivity": {
-                "mean": float(np.nanmean([entry["sensitivity"] for entry in samplewise_results])),
-                "std": float(np.nanstd([entry["sensitivity"] for entry in samplewise_results])),
-                "q1": float(np.nanquantile([entry["sensitivity"] for entry in samplewise_results], 0.25)),
-                "q2": float(np.nanquantile([entry["sensitivity"] for entry in samplewise_results], 0.5)),
-                "q3": float(np.nanquantile([entry["sensitivity"] for entry in samplewise_results], 0.75)),
-            },
-            "precision": {
-                "mean": float(np.nanmean([entry["precision"] for entry in samplewise_results])),
-                "std": float(np.nanstd([entry["precision"] for entry in samplewise_results])),
-                "q1": float(np.nanquantile([entry["precision"] for entry in samplewise_results], 0.25)),
-                "q2": float(np.nanquantile([entry["precision"] for entry in samplewise_results], 0.5)),
-                "q3": float(np.nanquantile([entry["precision"] for entry in samplewise_results], 0.75)),
-            },
-        },
-    )
+        )
+
+    return all_results
 
 
 def evaluate_semantic_results(
@@ -187,6 +233,9 @@ def _semantic_classwise_eval(gt_arr: np.ndarray, pd_arr: np.ndarray, class_id: i
         precision = intersection_voxels / pd_voxels
     else:
         precision = np.NAN
+
+    # ToDo: Add more metrics here. Currently it's only boring stuff like dice, iou, recall, precision
+    #   Can have more metrics like NSD, ASD, etc.
 
     return SemanticResult(
         dice=dice,
@@ -250,6 +299,7 @@ def semantic_evaluate_case(
         semantic_eval.spacing = gt_spacing
         semantic_eval.dimensions = gt_npy.shape
         all_results.append(semantic_eval)
+
     return all_results  # List of dicts
 
 
