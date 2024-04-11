@@ -32,18 +32,13 @@ def instance_evaluation_entrypoint():
         "-o",
         "--output_path",
         type=Path,
-        required=False,
-        default=None,
+        required=True,
         help="Output path for evaluation results -- Uses prediction path if not provided",
     )
     args = parser.parse_args()
 
-    if args.output_path is None:
-        output_path = args.instance_pd_path
-        output_path = Path(output_path) / "nneval"
-        output_path.mkdir(parents=False, exist_ok=True)
-    else:
-        output_path = args.output_path
+    output_path = args.output_path
+    output_path.mkdir(parent=True, exist_ok=True)
     pd_path = args.instance_pd_path
     gt_path = args.instance_gt_path
     classes_of_interest = args.classes_of_interest

@@ -3,12 +3,15 @@ from typing import Sequence
 
 from nneval.evaluate.semantic_eval import evaluate_semantic_results, get_samplewise_statistics
 from nneval.utils.datastructures import SemanticResult
-from nneval.utils.io import export_results, get_matching_semantic_pairs, save_json
+from nneval.utils.io import export_results, get_matching_semantic_pairs, save_json, get_default_output_path
 from loguru import logger
 
 
 def semantic_evaluation(
-    semantic_pd_path: Path, semantic_gt_path: Path, output_path: Path, classes_of_interest: Sequence[int] = (1)
+    semantic_pd_path: Path | str,
+    semantic_gt_path: str | Path,
+    output_path: str | Path,
+    classes_of_interest: Sequence[int] = (1),
 ):
     """
     Evaluate the semantic results by comparing the predicted semantic labels with the ground truth labels.
@@ -22,6 +25,11 @@ def semantic_evaluation(
     Returns:
         None
     """
+    
+    semantic_pd_path = Path(semantic_pd_path)
+    semantic_gt_path = Path(semantic_gt_path)
+    output_path = Path(output_path)
+
     # ------------------------- Get all Cases to evaluate ------------------------ #
     logger.info("Get all matching semantic pairs to evaluate.")
     semantic_pairs = get_matching_semantic_pairs(gt_path=semantic_gt_path, pd_path=semantic_pd_path)

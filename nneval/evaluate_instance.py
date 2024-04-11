@@ -6,12 +6,17 @@ from nneval.utils.io import export_results, get_matching_instance_pairs
 
 
 def instance_evaluation(
-    instance_pd_path: Path,
-    instance_gt_path: Path,
-    output_path: Path,
+    instance_pd_path: str | Path,
+    instance_gt_path: str | Path,
+    output_path: str | Path,
     classes_of_interest: Sequence[int] = (1),
     dice_threshold=0.1,
 ):
+
+    instance_pd_path = Path(instance_pd_path)
+    instance_gt_path = Path(instance_gt_path)
+    output_path = Path(output_path)
+
     # ---------------------------- Get instance cases ---------------------------- #
     instance_pairs = get_matching_instance_pairs(gt_path=instance_gt_path, pd_path=instance_pd_path)
     # ----------- Evaluate Cases for all class ids and collect metrics ----------- #
@@ -22,7 +27,6 @@ def instance_evaluation(
     )
     # ------------------------- Save the results ------------------------- #
     export_results(eval, output_path)
-    
 
 
 if __name__ == "__main__":
