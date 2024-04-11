@@ -9,31 +9,23 @@ from nneval.utils.io import export_results, get_matching_semantic_pairs
 from nneval.exporting import export_semantic
 
 
-def semantic_evaluation_entrypoint():
-    parser = ArgumentParser()
-    parser.add_argument("--semantic_pd_path", type=Path, required=True, help="Path to predictions")
-    parser.add_argument("--semantic_gt_path", type=Path, required=True, help="Path to groundtruth")
-    parser.add_argument("--classes_of_interest", type=int, nargs="+", default=(1,), help="Classes to evaluate")
-    parser.add_argument("--output_path", type=Path, required=False, default=None)
-    args = parser.parse_args()
-
-    if args.output_path is None:
-        output_path = args.semantic_pd_path
-    else:
-        output_path = args.output_path
-    pd_path = args.semantic_pd_path
-    gt_path = args.semantic_gt_path
-    classes_of_interest = args.classes_of_interest
-
-    assert pd_path.exists(), f"Path to predictions does not exist: {pd_path}"
-    assert gt_path.exists(), f"Path to groundtruth does not exist: {gt_path}"
-    assert all([isinstance(c, int) for c in classes_of_interest]), "Classes of interest must be integers"
-    semantic_evaluation(pd_path, gt_path, output_path, classes_of_interest)
 
 
 def semantic_evaluation(
     semantic_pd_path: Path, semantic_gt_path: Path, output_path: Path, classes_of_interest: Sequence[int] = (1)
 ):
+    """
+    Evaluate the semantic results by comparing the predicted semantic labels with the ground truth labels.
+
+    Args:
+        semantic_pd_path (Path): The path to the predicted semantic labels.
+        semantic_gt_path (Path): The path to the ground truth semantic labels.
+        output_path (Path): The path to save the evaluation results.
+        classes_of_interest (Sequence[int], optional): The classes of interest to evaluate. Defaults to (1).
+
+    Returns:
+        None
+    """
     # ------------------------- Get all Cases to evaluate ------------------------ #
     semantic_pairs = get_matching_semantic_pairs(gt_path=semantic_gt_path, pd_path=semantic_pd_path)
     # ----------- Evaluate Cases for all class ids and collect metrics ----------- #
