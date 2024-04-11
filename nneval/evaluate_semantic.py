@@ -30,6 +30,7 @@ def semantic_evaluation(
     logger.info("Evaluating all semantic values.")
     eval: list[SemanticResult] = evaluate_semantic_results(semantic_pairs, classes_of_interest)
     # ------------------------- Save the results ------------------------- #
+    output_path.mkdir(parents=True, exist_ok=True)
     export_results(eval, output_path)
     aggregated_results = get_samplewise_statistics(eval)
     save_json(aggregated_results, output_path / "aggregated_results.json")
