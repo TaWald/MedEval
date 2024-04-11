@@ -19,20 +19,6 @@ def instance_generation(semantic_pd_path: Path, semantic_gt_path: Path, output_p
     )
 
 
-def instance_generation(semantic_pd_path: Path, semantic_gt_path: Path, output_pd_path: Path, output_gt_path: Path):
-    """Exemplary call to instances."""
-    create_instance(
-        input_path=semantic_pd_path,
-        output_dir=output_pd_path,
-        overwrite=True,  # Set to true to show it actually creates stuff
-    )
-    create_instance(
-        input_path=semantic_gt_path,
-        output_dir=output_gt_path,
-        overwrite=True,  # Set to true to show it actually creates stuff
-    )
-
-
 if __name__ == "__main__":
     cur_path = Path(__file__).parent.parent / "tests/"
 
