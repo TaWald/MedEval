@@ -7,6 +7,7 @@ import sys
 from typing import Sequence
 
 import SimpleITK as sitk
+from loguru import logger
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
@@ -179,7 +180,7 @@ def evaluate_semantic_results(
     class_ids_to_evaluate: Sequence[int],
     n_processes: int = 1,
 ) -> list[SemanticResult]:
-    print("Startig unresampled casewise evaluation. (not resampled)")
+    logger.info("Starting unresampled casewise evaluation.")
 
     if n_processes == 1:
         samplewise_results = []
