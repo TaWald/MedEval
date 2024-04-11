@@ -1,15 +1,13 @@
 from copy import deepcopy
 from functools import partial
-from itertools import chain, repeat
-from pydicom import Sequence
+from itertools import chain
 from tqdm.contrib.concurrent import process_map  # or thread_map
 
 
 from time import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Sequence
 
 import numpy as np
-import pandas as pd
 from scipy.optimize import linear_sum_assignment as lsa
 import SimpleITK as sitk
 
@@ -19,7 +17,6 @@ from nneval.utils.default_values import (
     no_prediction_but_groundtruth,
     no_prediction_no_groundtruth,
 )
-from nneval.utils.io import get_all_sample_names, get_spacing_from_image
 
 
 def compare_all_instance_of_same_class(
@@ -135,8 +132,8 @@ def match_instances(
         not_matched_gts = set_of_groundtruths - set(col_ids)
 
         for row, col in zip(row_ids, col_ids):
-            pred = predictions[row]
-            gt = groundtruths[col]
+            pred: Instance = predictions[row]
+            gt: Instance = groundtruths[col]
 
             dice = float(dice_arr[row, col])
             if dice == 0:
