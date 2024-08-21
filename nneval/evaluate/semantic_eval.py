@@ -224,6 +224,9 @@ def _semantic_classwise_eval(gt_arr: np.ndarray, pd_arr: np.ndarray, class_id: i
     else:
         dice = np.NAN
         iou = np.NAN
+        logger.warning("Right now we make dice and iou 1 if no foreground and no prediction")
+        dice = 1
+        iou = 1
 
     if gt_voxels != 0:
         recall = intersection_voxels / gt_voxels
