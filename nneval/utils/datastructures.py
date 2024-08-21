@@ -37,6 +37,11 @@ class SemanticResult:
     union_volume: float = field(init=False)
     spacing: Sequence[float] = field(init=False)
     dimensions: Sequence[int] = field(init=False)
+    absolute_volume_difference: float = field(init=False)
+    absolute_voxel_difference: int = field(init=False)
+
+    def __post_init__(self):
+        self.absolute_voxel_difference = abs(self.pd_voxels - self.gt_volume)
 
     def add_volume_per_voxel(self, volume_per_voxel: float):
         self.volume_per_voxel = volume_per_voxel
@@ -44,6 +49,7 @@ class SemanticResult:
         self.gt_volume = self.gt_voxels * volume_per_voxel
         self.intersection_volume = self.intersection_voxels * volume_per_voxel
         self.union_volume = self.union_voxels * volume_per_voxel
+        self.absolute_volume_difference = abs(self.pd_volume - self.gt_volume)
 
     def get_non_meta_values(self) -> dict:
         """Returns all values that are not meta values like dimensions and spacing, allowing to calculate statistics over them."""
@@ -81,6 +87,7 @@ class InstanceResult:
     union_volume: float = field(init=False)
     true_positive: int = field(init=False)
     false_negative: int = field(init=False)
+    absolute_volume_difference: float = field(init=False)
 
     def __post_init__(self):
         self.pd_volume = self.pd_voxels * self.volume_per_voxel
