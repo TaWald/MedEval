@@ -7,11 +7,12 @@ from nneval.utils.io import export_results, get_matching_semantic_pairs, save_js
 from loguru import logger
 
 
-def semantic_evaluation(
+def semantic_filter_evaluation(
     semantic_pd_path: Path | str,
     semantic_gt_path: str | Path,
     output_path: str | Path,
-    classes_of_interest: Sequence[int] = (1),
+    classes_of_interest: Sequence[int] = (1,),
+    volume_sweep_threshold: Sequence[float] = (0, 100, 11),
 ):
     """
     Evaluate the semantic results by comparing the predicted semantic labels with the ground truth labels.
@@ -47,20 +48,18 @@ def semantic_evaluation(
 if __name__ == "__main__":
     cur_path = Path(__file__).parent.parent / "tests/"
 
-    instance_pd_path = Path("/home/tassilowald/Data/aims-tbi/postprocess_eval/predsTr_5fold")
-    instance_gt_path = Path("/home/tassilowald/Data/aims-tbi/postprocess_eval/labelsTr")
-    out_gt_path = Path("/home/tassilowald/Data/aims-tbi/postprocess_eval/eval_results")
+    single_cls_gts = cur_path / "sem_test_data/single_class/gts"
+    single_cls_pds = cur_path / "sem_test_data/single_class/preds"
+    multi_cls_gts = cur_path / "sem_test_data/multi_class/gts"
+    multi_cls_pds = cur_path / "sem_test_data/multi_class/preds"
+
+    single_out = cur_path / "sem_test_data/single_class/eval"
+    multi_out = cur_path / "sem_test_data/multi_class/eval"
 
     semantic_evaluation(
-        semantic_pd_path=instance_pd_path,
-        semantic_gt_path=instance_gt_path,
-        output_path=out_gt_path,
+        semantic_pd_path=single_cls_pds,
+        semantic_gt_path=single_cls_gts,
+        output_path=single_out,
         classes_of_interest=(1,),
     )
 
-    # semantic_evaluation(
-    #     semantic_pd_path=multi_cls_pds,
-    #     semantic_gt_path=multi_cls_gts,
-    #     output_path=multi_out,
-    #     classes_of_interest=(1, 2),
-    # )

@@ -68,23 +68,17 @@ def verify_and_clean_config(config: dict):
             del common_root_path
         elif k == "instance_generation":
             common_root_path = v.get("common_root_path", None)
-            mandatory_keys = ["semantic_pd_path", "semantic_gt_path"]
+            mandatory_keys = ["semantic_labels_path", "is_prediction"]
             assert isinstance(v["runs"], list), f"Expected list for instance_creation; Got {type(v)}"
             for cnt, eval in enumerate(v["runs"]):
                 if common_root_path is not None:
-                    eval["semantic_pd_path"] = common_root_path / Path(eval["semantic_pd_path"])
-                    eval["semantic_gt_path"] = common_root_path / Path(eval["semantic_gt_path"])
-                    if "output_pd_path" in eval:
-                        eval["output_pd_path"] = common_root_path / Path(eval["output_pd_path"])
-                    if "output_gt_path" in eval:
-                        eval["output_gt_path"] = common_root_path / Path(eval["output_gt_path"])
+                    eval["semantic_labels_path"] = common_root_path / Path(eval["semantic_labels_path"])
+                    if "output_path" in eval:
+                        eval["output_path"] = common_root_path / Path(eval["output_path"])
                 else:
-                    eval["semantic_pd_path"] = Path(eval["semantic_pd_path"])
-                    eval["semantic_gt_path"] = Path(eval["semantic_gt_path"])
-                    if "output_pd_path" in eval:
-                        eval["output_pd_path"] = Path(eval["output_pd_path"])
-                    if "output_gt_path" in eval:
-                        eval["output_gt_path"] = Path(eval["output_gt_path"])
+                    eval["semantic_labels_path"] = Path(eval["semantic_labels_path"])
+                    if "output_path" in eval:
+                        eval["output_path"] = Path(eval["output_path"])
                 assert all(
                     [kk in eval.keys() for kk in mandatory_keys]
                 ), f"Missing keys in instance_creation entry {cnt}.\n Needs: {mandatory_keys}; Got {v.keys()}"

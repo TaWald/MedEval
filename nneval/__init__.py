@@ -1,0 +1,3 @@
+from nneval.evaluate_instance_entrypoint import instance_evaluation
+from nneval.evaluate_semantic_entrypoint import semantic_evaluation
+from nneval.generate_instances_entrypoint import create_instances_entrypoint

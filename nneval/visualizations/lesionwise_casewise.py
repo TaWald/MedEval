@@ -8,7 +8,7 @@ from pathlib import Path
 from scipy.stats import wilcoxon
 import pandas as pd
 import numpy as np
-from nneval.visualizations.architecture_wise_performance import add_median_labels
+from nneval.deprecated.visualizations.architecture_wise_performance import add_median_labels
 
 from statannotations.Annotator import Annotator
 

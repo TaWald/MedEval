@@ -24,6 +24,7 @@ def no_prediction_no_groundtruth(
     spacing: np.ndarray,
     dimensions: np.ndarray,
     dice_threshold: float,
+    volume_threshold: float,
 ) -> Dict:
     """Defines behavior for a case where no groundtruth or prediction instance was found for the class_id."""
     inst_result = InstanceResult(
@@ -44,6 +45,7 @@ def no_prediction_no_groundtruth(
         spacing=spacing,
         dimensions=dimensions,
         dice_threshold=dice_threshold,
+        volume_threshold=volume_threshold,
     )
     return inst_result
 
@@ -55,6 +57,7 @@ def no_groundtruth_but_prediction(
     spacing: np.ndarray,
     dimensions: np.ndarray,
     dice_threshold: float,
+    volume_threshold: float,
     pred: Instance,
 ) -> InstanceResult:
     """Calculates the predicted instance without groundtruth."""
@@ -76,6 +79,7 @@ def no_groundtruth_but_prediction(
         spacing=spacing,
         dimensions=dimensions,
         dice_threshold=dice_threshold,
+        volume_threshold=volume_threshold,
     )
     return inst_result
 
@@ -87,6 +91,7 @@ def no_prediction_but_groundtruth(
     spacing: np.ndarray,
     dimensions: np.ndarray,
     dice_threshold: float,
+    volume_threshold: float,
     gt: Instance,
 ) -> InstanceResult:
     """Calculates the predicted instance without groundtruth."""
@@ -107,6 +112,7 @@ def no_prediction_but_groundtruth(
         spacing=spacing,
         dimensions=dimensions,
         dice_threshold=dice_threshold,
+        volume_threshold=volume_threshold,
         volume_per_voxel=volume_per_voxel,
     )
     return inst_result
@@ -119,6 +125,7 @@ def groundtruth_instance_without_prediction(
     spacing: np.ndarray,
     dimensions: np.ndarray,
     dice_threshold: float,
+    volume_threshold: float,
     pred: Instance,
 ) -> InstanceResult:
     """Calculates the predicted instance without groundtruth."""
@@ -140,6 +147,7 @@ def groundtruth_instance_without_prediction(
         spacing=spacing,
         dimensions=dimensions,
         dice_threshold=dice_threshold,
+        volume_threshold=volume_threshold,
     )
     return inst_result
 
@@ -154,4 +162,3 @@ def get_empty_groundtruth(sample_name: str) -> Dict:
         dice_size_intersect_union_precision_recall_pairs=[(0.0, -1.0, 0.0, 0.0, 0.0, 0.0)],
         max_dice_pd_index=-1.0,
     )
-

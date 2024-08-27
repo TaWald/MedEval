@@ -16,23 +16,35 @@
             "name": "Samplewise Eval",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/sem2ins/samplewise_evaluation.py",
+            "program": "${workspaceFolder}/nneval/semantic_entrypoint.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "--groundtruth_path",
-                "/mnt/cluster-data-all/t006d/nnunetv2/test_data_folder/test_set_SPACE/labelsTs_Sequence_SPACE",
-                "--prediction_path",
-                "/mnt/cluster-data-all/t006d/nnunetv2/test_data_folder/test_set_SPACE/pred201",
-                "--classes_of_interest",
-                "1"
+            "--semantic_gt_path",
+            "/mnt/cluster-data-all/t006d/nnunetv2/test_data_folder/stanford_bm/labelsTr",
+            "--semantic_pd_path",
+            "/mnt/cluster-data-all/t006d/nnunetv2/test_data_folder/stanford_bm/pred202",
+            "--classes_of_interest",
+            "1"
+            ]
+        },
+        {
+            "name": "Config Eval",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/nneval/config_entry.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+            "--config",
+            "${workspaceFolder}/nneval/configs/brain_mets.yaml",
             ]
         },
         {
             "name": "Run Whole Configuration",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/sem2ins/run_evaluation.py",
+            "program": "${workspaceFolder}/nneval/run_evaluation.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [

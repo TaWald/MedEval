@@ -4,7 +4,7 @@ from pathlib import Path
 
 def pred_dataset(pred_path, gt_path, coi, n_processes):
     res = os.system(
-        f"""python3 /home/tassilowald/Code/semantic_to_instance/sem2ins/run_evaluation.py --groundtruth_path {gt_path} --prediction_path {pred_path} --classes_of_interest {coi} --n_processes {n_processes}"""
+        f"""python3 /home/tassilowald/Code/semantic_to_instance/nneval/run_evaluation.py --groundtruth_path {gt_path} --prediction_path {pred_path} --classes_of_interest {coi} --n_processes {n_processes}"""
     )
     if res != 0:
         raise ValueError("Evaluation failed")

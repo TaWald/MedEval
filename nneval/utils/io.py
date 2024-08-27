@@ -3,6 +3,8 @@ from pathlib import Path
 import SimpleITK as sitk
 import numpy as np
 import json
+
+import yaml
 from nneval.utils.datastructures import InstancePair, SemanticPair
 
 from nneval.utils.datastructures import InstanceResult, SemanticResult
@@ -65,11 +67,28 @@ def get_flat_array_from_image(filepath: str) -> np.ndarray:
     return flat_im
 
 
+def save_json(data: dict, path: str | Path):
+    with open(str(path), "w") as f:
+        json.dump(data, f, indent=4)
+
+
+def get_default_output_path(prediction_path: Path) -> Path:
+    """
+    Returns the default output path for the evaluation results.
+    """
+    out_path = prediction_path / "nneval"
+    out_path.mkdir(parents=False, exist_ok=True)
+    return out_path
+
+
 def get_matching_semantic_pairs(gt_path: Path | str, pd_path: Path | str) -> list[SemanticPair]:
     """
     Finds the matching prediction instance to groundtruth instances in the provided paths.
     If not all groundtruth instances have a matching prediction instance raises an AssertionError.
     """
+    pd_path = Path(pd_path)
+    gt_path = Path(gt_path)
+
     gt_sample_ids = set(os.listdir(gt_path))
     gt_sample_ids = list(sorted([x for x in gt_sample_ids if x.endswith(SUPPORTED_EXTENSIONS)]))
 
@@ -131,3 +150,9 @@ def export_results(results: list[SemanticResult | InstanceResult], output_path: 
         df.to_csv(output_path / "instance_evaluation.csv")
     else:
         df.to_csv(output_path / "semantic_evaluation.csv")
+
+
+def load_yaml(path: str | Path):
+    with open(path, "r") as f:
+        config = yaml.load(f, Loader=yaml.Loader)
+    return config

@@ -1,6 +1,6 @@
 from dataclasses import field, dataclass, asdict
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, Tuple
 import numpy as np
 
 
@@ -41,7 +41,7 @@ class SemanticResult:
     absolute_voxel_difference: int = field(init=False)
 
     def __post_init__(self):
-        self.absolute_voxel_difference = abs(self.pd_voxels - self.gt_volume)
+        self.absolute_voxel_difference = abs(self.pd_voxels - self.gt_voxels)
 
     def add_volume_per_voxel(self, volume_per_voxel: float):
         self.volume_per_voxel = volume_per_voxel
@@ -81,6 +81,7 @@ class InstanceResult:
     spacing: Sequence[float]
     dimensions: Sequence[int]
     dice_threshold: float
+    volume_threshold: float
     pd_volume: float = field(init=False)
     gt_volume: float = field(init=False)
     intersection_volume: float = field(init=False)
@@ -125,6 +126,43 @@ class InstanceResult:
 
     def todict(self) -> dict:
         return asdict(self)
+
+
+@dataclass
+class LesionwiseCasewiseResult:
+    case_id: str
+    semantic_class_id: int
+    volume_per_voxel: float
+    lw_precision: float
+    lw_recall: float
+    lw_dice: float
+    cw_dice: float
+    case_precision: float
+    case_recall: float
+    case_f1: float
+    dice_threshold: float
+    predicted_lesion_count: int
+    groundtruth_lesion_count: int
+    total_predicted_voxels: int
+    total_groundtruth_voxels: int
+    pd_minus_gt_lesion_count_difference: int = field(init=False)
+    total_pd_minus_gt_voxel_difference: int = field(init=False)
+    total_predicted_lesion_volume: float = field(init=False)
+    total_groundtruth_lesion_volume: float = field(init=False)
+    total_pd_minus_gt_lesion_volume_difference: float = field(init=False)
+    absolute_lesion_volume_difference: float = field(init=False)
+    absolute_lesion_count_difference: int = field(init=False)
+
+    def __post_init__(self):
+        self.pd_minus_gt_lesion_count_difference = self.predicted_lesion_count - self.groundtruth_lesion_count
+        self.total_pd_minus_gt_voxel_difference = self.total_predicted_voxels - self.total_groundtruth_voxels
+        self.total_predicted_lesion_volume = self.total_predicted_voxels * self.volume_per_voxel
+        self.total_groundtruth_lesion_volume = self.total_groundtruth_voxels * self.volume_per_voxel
+        self.total_pd_minus_gt_lesion_volume_difference = (
+            self.total_predicted_lesion_volume - self.total_groundtruth_lesion_volume
+        )
+        self.absolute_lesion_volume_difference = float(abs(self.total_pd_minus_gt_lesion_volume_difference))
+        self.absolute_lesion_count_difference = float(abs(self.pd_minus_gt_lesion_count_difference))
 
 
 @dataclass

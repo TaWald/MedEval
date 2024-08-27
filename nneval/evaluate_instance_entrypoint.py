@@ -38,7 +38,7 @@ def instance_evaluation_entrypoint():
     args = parser.parse_args()
 
     output_path = args.output_path
-    output_path.mkdir(parent=True, exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
     pd_path = args.instance_pd_path
     gt_path = args.instance_gt_path
     classes_of_interest = args.classes_of_interest

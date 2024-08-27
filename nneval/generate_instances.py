@@ -5,36 +5,31 @@ from pathlib import Path
 from toinstance.predict import create_instance
 
 
-def instance_generation(
+def instance_generation(input_path: Path, output_path: Path, overwrite: bool = False, is_prediction: bool = False):
+    if output_path is None:
+        output_path = input_path
+        assert output_path.exists(), f"Output prediction path does not exist: {output_path}"
+        filename = "pd_instances" if is_prediction else "gt_instances"
+        output_path = Path(output_path) / "nneval" / filename
+        output_path.mkdir(parents=True, exist_ok=True)
+    create_instance(
+        input_path=Path(input_path),
+        output_dir=Path(output_path),
+        overwrite=overwrite,  # Set to true to show it actually creates stuff
+    )
+
+
+def pd_gt_instance_generation(
     semantic_pd_path: str | Path,
     semantic_gt_path: str | Path,
     output_pd_path: str | Path | None = None,
     output_gt_path: str | Path | None = None,
+    overwrite: bool = True,
 ):
     """Exemplary call to instances."""
 
-    if output_pd_path is None:
-        output_pd_path = semantic_pd_path
-        assert output_pd_path.exists(), f"Output prediction path does not exist: {output_pd_path}"
-        output_pd_path = Path(output_pd_path) / "nneval" / "pd_instances"
-        output_pd_path.mkdir(parents=True, exist_ok=True)
-
-    if output_gt_path is None:
-        output_gt_path = semantic_gt_path
-        assert output_gt_path.exists(), f"Path to groundtruth does not exist: {output_gt_path}"
-        output_gt_path = Path(output_gt_path) / "nneval" / "gt_instances"
-        output_gt_path.mkdir(parents=True, exist_ok=True)
-
-    create_instance(
-        input_path=Path(semantic_pd_path),
-        output_dir=Path(output_pd_path),
-        overwrite=True,  # Set to true to show it actually creates stuff
-    )
-    create_instance(
-        input_path=Path(semantic_gt_path),
-        output_dir=Path(output_gt_path),
-        overwrite=True,  # Set to true to show it actually creates stuff
-    )
+    instance_generation(semantic_pd_path, output_pd_path, overwrite, is_prediction=True)
+    instance_generation(semantic_gt_path, output_gt_path, overwrite, is_prediction=False)
 
 
 if __name__ == "__main__":
@@ -50,14 +45,14 @@ if __name__ == "__main__":
     multi_cls_gts_out = cur_path / "ins_test_data/multi_class/gts"
     multi_cls_pds_out = cur_path / "ins_test_data/multi_class/preds"
 
-    instance_generation(
+    pd_gt_instance_generation(
         semantic_pd_path=single_cls_pds,
         semantic_gt_path=single_cls_gts,
         output_pd_path=single_cls_pds_out,
         output_gt_path=single_cls_gts_out,
     )
 
-    instance_generation(
+    pd_gt_instance_generation(
         semantic_pd_path=multi_cls_pds,
         semantic_gt_path=multi_cls_gts,
         output_pd_path=multi_cls_pds_out,

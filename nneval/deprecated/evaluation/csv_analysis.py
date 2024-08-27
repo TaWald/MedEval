@@ -1,6 +1,8 @@
 import numpy as np
 
 
+
+
 def get_patient_ids_of_all_samples(groundtruth_results: list[dict]) -> set[str]:
     image_set = set()
     for groundtruth in groundtruth_results:
@@ -31,23 +33,24 @@ def case_wise_summary_json(case_wise_res: list[dict]):
         all_precisions.append(res["precision"])
         all_recalls.append(res["recall"])
         all_f1.append(res["f1_score"])
-        
+
     result = {
         "mean_precision": np.nanmean(all_precisions),
-        "1st_quart_precision": np.nanquantile(all_precisions, .25),
-        "2st_quart_precision": np.nanquantile(all_precisions, .5),
-        "3rd_quart_precision": np.nanquantile(all_precisions, .75),
-        
+        "CI_precision": confidence_intervals(all_precisions),
+        "1st_quart_precision": np.nanquantile(all_precisions, 0.25),
+        "2st_quart_precision": np.nanquantile(all_precisions, 0.5),
+        "3rd_quart_precision": np.nanquantile(all_precisions, 0.75),
         "mean_recall": np.nanmean(all_recalls),
-        "1st_quart_recall": np.nanquantile(all_recalls, .25),
-        "2st_quart_recall": np.nanquantile(all_recalls, .5),
-        "3rd_quart_recall": np.nanquantile(all_recalls, .75),
-        
+        "CI_recall": confidence_intervals(all_recalls),
+        "1st_quart_recall": np.nanquantile(all_recalls, 0.25),
+        "2st_quart_recall": np.nanquantile(all_recalls, 0.5),
+        "3rd_quart_recall": np.nanquantile(all_recalls, 0.75),
         "mean_f1": np.nanmean(all_f1),
-        "1st_quart_f1": np.nanquantile(all_f1, .25),
-        "2st_quart_f1": np.nanquantile(all_f1, .5),
-        "3rd_quart_f1": np.nanquantile(all_f1, .75),
-        }
+        "CI_f1": confidence_intervals(all_f1),
+        "1st_quart_f1": np.nanquantile(all_f1, 0.25),
+        "2st_quart_f1": np.nanquantile(all_f1, 0.5),
+        "3rd_quart_f1": np.nanquantile(all_f1, 0.75),
+    }
     return result
 
 
@@ -232,6 +235,7 @@ def casewise_stats(casewise_result: list[dict], filter_size: int) -> dict:
     result = dict(
         filter_size=filter_size,
         mean_precision=np.nanmean(precision),
+        # ci95_precision=confidence_interval_binomial(p=np.nanmean(precision), n=len(precision), confidence_level=0.95),
         std_precision=np.nanstd(precision),
         median_precision=np.nanmedian(precision),
         # Recall
@@ -534,17 +538,17 @@ def size_wise_matching(
             quant50_groundtruth_precision = float(np.quantile(groundtruth_max_dice_precision, 0.5))
             quant75_groundtruth_precision = float(np.quantile(groundtruth_max_dice_precision, 0.75))
         else:
-            quant25_groundtruth_precision = 0.
-            quant50_groundtruth_precision = 0.
-            quant75_groundtruth_precision = 0.
-        
+            quant25_groundtruth_precision = 0.0
+            quant50_groundtruth_precision = 0.0
+            quant75_groundtruth_precision = 0.0
+
         # Recall
         mean_groundtruth_recall = float(np.mean(groundtruth_max_dice_recall))  # Mean that shit.
         std_groundtruth_recall = float(np.std(groundtruth_max_dice_recall))
         if len(groundtruth_max_dice_recall) == 0:
-            quant25_groundtruth_recall = 0.
-            quant50_groundtruth_recall = 0.
-            quant75_groundtruth_recall = 0.
+            quant25_groundtruth_recall = 0.0
+            quant50_groundtruth_recall = 0.0
+            quant75_groundtruth_recall = 0.0
         else:
             quant25_groundtruth_recall = float(np.quantile(groundtruth_max_dice_recall, 0.25))
             quant50_groundtruth_recall = float(np.quantile(groundtruth_max_dice_recall, 0.5))
@@ -553,9 +557,9 @@ def size_wise_matching(
         total_matched_groundtruths = sum(groundtruths_matched)
         assert len(groundtruths_matched) == n_total_groundtruths, "Something went wrong!"
         not_matched_groundtruths = len(groundtruths_matched) - total_matched_groundtruths
-        
-        if (true_positives + false_positives)==0:
-           precision = np.NaN
+
+        if (true_positives + false_positives) == 0:
+            precision = np.NaN
         else:
             precision = true_positives / (true_positives + false_positives)
         if n_total_groundtruths != 0:

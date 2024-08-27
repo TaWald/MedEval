@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Sequence
-from nneval.evaluate.instance_eval import evaluate_instance_results
+from nneval.evaluate.instance_eval import evaluate_instance_results, get_samplewise_instance_wise_statistics
 from nneval.utils.datastructures import InstanceResult
-from nneval.utils.io import export_results, get_matching_instance_pairs
+from nneval.utils.io import export_results, get_matching_instance_pairs, save_json
 
 
 def instance_evaluation(
@@ -27,6 +27,8 @@ def instance_evaluation(
     )
     # ------------------------- Save the results ------------------------- #
     export_results(eval, output_path)
+    sample_wise_instance_wise_results = get_samplewise_instance_wise_statistics(eval)
+    save_json(sample_wise_instance_wise_results, output_path / "sample_wise_instance_wise_results.json")
 
 
 if __name__ == "__main__":
