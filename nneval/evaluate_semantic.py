@@ -12,7 +12,8 @@ def semantic_evaluation(
     semantic_gt_path: str | Path,
     output_path: str | Path,
     classes_of_interest: Sequence[int] = (1),
-):
+    save_to_disk: bool = True,
+) -> tuple[dict, list[SemanticResult]]:
     """
     Evaluate the semantic results by comparing the predicted semantic labels with the ground truth labels.
 
@@ -41,7 +42,9 @@ def semantic_evaluation(
     output_path.mkdir(parents=True, exist_ok=True)
     export_results(eval, output_path)
     aggregated_results = get_samplewise_statistics(eval)
-    save_json(aggregated_results, output_path / "semantic_results_aggregated.json")
+    if save_to_disk:
+        save_json(aggregated_results, output_path / "semantic_results_aggregated.json")
+    return aggregated_results, eval
 
 
 if __name__ == "__main__":
