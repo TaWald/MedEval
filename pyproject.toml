@@ -45,6 +45,6 @@ testpaths = ["tests",]
 
 
 [project.scripts]
-nneval_semantic_eval = "nneval.evluate_semantic_entrypoint:semantic_evaluation_entrypoint"
+nneval_semantic_eval = "nneval.evaluate_semantic_entrypoint:semantic_evaluation_entrypoint"
 nneval_instance_eval = "nneval.evaluate_instance_entrypoint:instance_evaluation_entrypoint"
 nneval_create_instances = "nneval.generate_instances_entrypoint:create_instances_entrypoint"
