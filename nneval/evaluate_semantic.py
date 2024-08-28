@@ -47,7 +47,7 @@ def semantic_evaluation(
         if output_name is None:
             save_json(aggregated_results, output_path / "semantic_results_aggregated.json")
         else:
-            save_json(aggregated_results, output_path / output_name + "_agg.json")
+            save_json(aggregated_results, output_path / (output_name + "_agg.json"))
     return aggregated_results, eval
 
 
