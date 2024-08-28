@@ -133,7 +133,7 @@ def get_matching_instance_pairs(gt_path: Path | str, pd_path: Path | str) -> lis
     return all_instance_pairs
 
 
-def export_results(results: list[SemanticResult | InstanceResult], output_path: Path):
+def export_results(results: list[SemanticResult | InstanceResult], output_path: Path, output_name: str | None = None):
     """
     Export the semantic results to a comprehensive csv and some user-readable inputs.
     """
@@ -146,10 +146,17 @@ def export_results(results: list[SemanticResult | InstanceResult], output_path: 
     # -------------------------- Comprehensive Dataframe ------------------------- #
     df = pd.DataFrame(records)
     output_path.mkdir(parents=True, exist_ok=True)
-    if isinstance(results[0], InstanceResult):
-        df.to_csv(output_path / "instance_evaluation.csv")
+    if output_name is None:
+        if isinstance(results[0], InstanceResult):
+            df.to_csv(output_path / "instance_evaluation.csv")
+        else:
+            df.to_csv(output_path / "semantic_evaluation.csv")
     else:
-        df.to_csv(output_path / "semantic_evaluation.csv")
+        # Points to a file
+        if isinstance(results[0], InstanceResult):
+            df.to_csv(output_path / (output_name + "__instance_eval.csv"))
+        else:
+            df.to_csv(output_path / (output_name + "__semantic_eval.csv"))
 
 
 def load_yaml(path: str | Path):
