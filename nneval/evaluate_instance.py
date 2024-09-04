@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from pathlib import Path
 from typing import Sequence
 from nneval.evaluate.instance_eval import evaluate_instance_results, get_samplewise_instance_wise_statistics
@@ -28,7 +29,10 @@ def instance_evaluation(
     # ------------------------- Save the results ------------------------- #
     export_results(eval, output_path)
     sample_wise_instance_wise_results = get_samplewise_instance_wise_statistics(eval)
-    save_json(sample_wise_instance_wise_results, output_path / "sample_wise_instance_wise_results.json")
+    save_json(
+        {k: asdict(v) for k, v in sample_wise_instance_wise_results.items()},
+        output_path / "sample_wise_instance_wise_results.json",
+    )
 
 
 if __name__ == "__main__":
