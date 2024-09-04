@@ -95,6 +95,7 @@ class InstanceResult:
         self.gt_volume = self.gt_voxels * self.volume_per_voxel
         self.intersection_volume = self.intersection_voxels * self.volume_per_voxel
         self.union_volume = self.union_voxels * self.volume_per_voxel
+        self.absolute_volume_difference = float(np.abs(self.pd_volume - self.gt_volume))
         self._determine_tp(self.dice_threshold)
 
     def get_non_meta_values(self) -> dict:
