@@ -30,7 +30,7 @@ def instance_evaluation(
     export_results(eval, output_path)
     sample_wise_instance_wise_results = get_samplewise_instance_wise_statistics(eval)
     save_json(
-        {k: asdict(v) for k, v in sample_wise_instance_wise_results.items()},
+        {k: [asdict(v) for v in vv] for k, vv in sample_wise_instance_wise_results.items()},
         output_path / "sample_wise_instance_wise_results.json",
     )
 
