@@ -37,10 +37,22 @@ def instance_evaluation_entrypoint():
     )
     args = parser.parse_args()
 
-    output_path = args.output_path
-    output_path.mkdir(parents=True, exist_ok=True)
+    pd_path: Path
+    gt_path: Path
+    output_path: Path
     pd_path = args.instance_pd_path
     gt_path = args.instance_gt_path
+    output_path = args.output_path
+
+    if not pd_path.is_absolute():
+        pd_path = Path.cwd() / pd_path
+    if not gt_path.is_absolute():
+        gt_path = Path.cwd() / gt_path
+    if not output_path.is_absolute():
+        output_path = pd_path.parent / output_path
+
+    output_path.mkdir(parents=True, exist_ok=True)
+
     classes_of_interest = args.classes_of_interest
 
     assert pd_path.exists(), f"Path to predictions does not exist: {pd_path}"

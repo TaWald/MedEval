@@ -93,9 +93,10 @@ def _get_matching_pairs(gt_path: Path | str, pd_path: Path | str, patterns: tupl
 
     pd_wo_ext = [x.split(".")[0] for x in pd_sample_ids]
     gt_wo_ext = [x.split(".")[0] for x in gt_sample_ids]
+    ext = pd_sample_ids[0][pd_sample_ids[0].find(".") :]
     assert set(pd_wo_ext) == set(gt_wo_ext), "PatientIDs differ from GT to PD!"
 
-    return list([PredGTPair(pd_p=pd_path / x, gt_p=gt_path / x) for x in gt_wo_ext])
+    return list([PredGTPair(pd_p=pd_path / (x + ext), gt_p=gt_path / (x + ext)) for x in gt_wo_ext])
 
 
 def get_matching_semantic_pairs(gt_path: Path | str, pd_path: Path | str) -> list[PredGTPair]:

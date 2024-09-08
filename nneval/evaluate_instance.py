@@ -1,7 +1,7 @@
 from dataclasses import asdict
 from pathlib import Path
 from typing import Sequence
-from nneval.evaluate.instance_eval import evaluate_instance_results, get_samplewise_instance_wise_statistics
+from nneval.evaluate.instance_eval import aggregate_lesion_wise_case_wise_metrics, evaluate_instance_results, get_samplewise_instance_wise_statistics
 from nneval.utils.datastructures import InstanceResult
 from nneval.utils.io import export_results, get_matching_instance_pairs, save_json
 
@@ -25,6 +25,7 @@ def instance_evaluation(
         instance_pair=instance_pairs,
         dice_threshold=dice_threshold,
         semantic_classes=classes_of_interest,
+        num_processes=1,
     )
     # ------------------------- Save the results ------------------------- #
     export_results(eval, output_path)
@@ -33,6 +34,8 @@ def instance_evaluation(
         {k: [asdict(v) for v in vv] for k, vv in sample_wise_instance_wise_results.items()},
         output_path / "sample_wise_instance_wise_results.json",
     )
+    aggregated_lwcw = aggregate_lesion_wise_case_wise_metrics(sample_wise_instance_wise_results)
+    save_json(aggregated_lwcw, output_path / f"aggregated_lwcw_results.json")
 
 
 if __name__ == "__main__":

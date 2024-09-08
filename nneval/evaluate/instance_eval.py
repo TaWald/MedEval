@@ -29,7 +29,10 @@ def aggregate_lesion_wise_case_wise_metrics(vals: dict[int, list[InstanceResult]
         # Only use values of the same semantic class.
         sem_class_res = {}
         for k in numeric_keys:
-            sem_class_res[k] = float(np.nanmean([getattr(v, k) for v in results]))
+            sem_class_res[k + "_mean"] = float(np.nanmean([getattr(v, k) for v in results]))
+            sem_class_res[k + "_median"] = float(np.nanmedian([getattr(v, k) for v in results]))
+            sem_class_res[k + "_q1"] = float(np.nanquantile([getattr(v, k) for v in results], 0.25))
+            sem_class_res[k + "_q3"] = float(np.nanquantile([getattr(v, k) for v in results], 0.75))
         aggregated_results[sem_id] = sem_class_res
     return aggregated_results
 
@@ -286,8 +289,8 @@ def evaluate_instance_result(
     instance_pd: InstanceNrrd = InstanceNrrd.from_innrrd(instance_pair.pd_p)
     instance_gt: InstanceNrrd = InstanceNrrd.from_innrrd(instance_pair.gt_p)
 
-    ins_pd_arr: dict[int, list[np.ndarray]] = instance_pd.get_semantic_instance_maps()
-    ins_gt_arr: dict[int, list[np.ndarray]] = instance_gt.get_semantic_instance_maps()
+    ins_pd_arr: dict[int, list[np.ndarray]] = {int(k): v for k, v in instance_pd.get_semantic_instance_maps().items()}
+    ins_gt_arr: dict[int, list[np.ndarray]] = {int(k): v for k, v in instance_gt.get_semantic_instance_maps().items()}
 
     spacing = instance_pd.get_spacing()
     dimensions = instance_pd.get_size()
@@ -300,11 +303,26 @@ def evaluate_instance_result(
     # If neither gt nor pd values exist for this sample.
     all_matches: list[InstanceResult] = []
     for cls_id in semantic_classes:
-        pd_instances: list[np.ndarray] = ins_pd_arr[cls_id]
-        gt_instances: list[np.ndarray] = ins_gt_arr[cls_id]
+        if cls_id not in ins_pd_arr:
+            pd_instances = []
+        else:
+            pd_instances: list[np.ndarray] = ins_pd_arr[cls_id]
+        if cls_id not in ins_gt_arr:
+            gt_instances = []
+        else:
+            gt_instances: list[np.ndarray] = ins_gt_arr[cls_id]
 
         # We remove all voxels that are zero for all groundtruths and predictions as they don't matter.
-        sem_area_rel = np.sum(pd_instances, axis=0) != 0 | np.sum(gt_instances, axis=0) != 0
+        if len(pd_instances) == 0 and len(gt_instances) == 0:
+            pass
+        elif len(pd_instances) == 0:
+            sem_area_rel = np.sum(np.stack(gt_instances, axis=0), axis=0) != 0
+        elif len(gt_instances) == 0:
+            sem_area_rel = np.sum(np.stack(pd_instances, axis=0), axis=0) != 0
+        else:
+            sem_area_rel = (np.sum(np.stack(pd_instances, axis=0), axis=0) != 0) | (
+                np.sum(np.stack(gt_instances, axis=0), axis=0) != 0
+            )
 
         predictions: list[Instance] = []
         for cnt, pd_inst in enumerate(pd_instances):
