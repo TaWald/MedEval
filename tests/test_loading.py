@@ -1,7 +1,7 @@
 import unittest
 import os
 from pathlib import Path
-from nneval.utils.datastructures import SemanticPair
+from nneval.utils.datastructures import PredGTPair
 from nneval.utils.io import get_matching_semantic_pairs
 
 ROOT_DIR = Path(os.path.abspath(__file__)).parent.parent / "tests" / "test_data"
@@ -18,7 +18,7 @@ def test_find_matching_semantic_pairs_single_class():
     returned_paths = get_matching_semantic_pairs(gt_path=SINGLE_CLASS_GT, pd_path=SINGLE_CLASS_PD)
 
     expected_semantic_pair = [
-        SemanticPair(pd_p=SINGLE_CLASS_PD / cid, gt_p=SINGLE_CLASS_GT / cid) for cid in SINGLE_CASE_IDs
+        PredGTPair(pd_p=SINGLE_CLASS_PD / cid, gt_p=SINGLE_CLASS_GT / cid) for cid in SINGLE_CASE_IDs
     ]
     assert set(returned_paths) == set(expected_semantic_pair)
 
@@ -28,7 +28,7 @@ def test_find_matching_semantic_pairs_multi_class():
     returned_paths = get_matching_semantic_pairs(gt_path=MULTI_CLASS_GT, pd_path=MULTI_CLASS_PD)
 
     expected_semantic_pair = [
-        SemanticPair(pd_p=MULTI_CLASS_PD / cid, gt_p=MULTI_CLASS_GT / cid) for cid in MULTI_CASE_IDs
+        PredGTPair(pd_p=MULTI_CLASS_PD / cid, gt_p=MULTI_CLASS_GT / cid) for cid in MULTI_CASE_IDs
     ]
     assert set(returned_paths) == set(expected_semantic_pair)
 

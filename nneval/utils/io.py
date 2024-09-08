@@ -5,7 +5,7 @@ import numpy as np
 import json
 
 import yaml
-from nneval.utils.datastructures import InstancePair, SemanticPair
+from nneval.utils.datastructures import PredGTPair
 
 from nneval.utils.datastructures import InstanceResult, SemanticResult
 import pandas as pd
@@ -81,7 +81,7 @@ def get_default_output_path(prediction_path: Path) -> Path:
     return out_path
 
 
-def get_matching_semantic_pairs(gt_path: Path | str, pd_path: Path | str) -> list[SemanticPair]:
+def get_matching_semantic_pairs(gt_path: Path | str, pd_path: Path | str) -> list[PredGTPair]:
     """
     Finds the matching prediction instance to groundtruth instances in the provided paths.
     If not all groundtruth instances have a matching prediction instance raises an AssertionError.
@@ -99,35 +99,27 @@ def get_matching_semantic_pairs(gt_path: Path | str, pd_path: Path | str) -> lis
     gt_wo_ext = [x for x in gt_sample_ids]
     assert set(pd_wo_ext) == set(gt_wo_ext), "PatientIDs differ from GT to PD!"
 
-    return list([SemanticPair(pd_p=pd_path / x, gt_p=gt_path / x) for x in gt_wo_ext])
+    return list([PredGTPair(pd_p=pd_path / x, gt_p=gt_path / x) for x in gt_wo_ext])
 
 
-def get_matching_instance_pairs(gt_path: Path | str, pd_path: Path | str) -> list[InstancePair]:
+def get_matching_instance_pairs(gt_path: Path | str, pd_path: Path | str) -> list[PredGTPair]:
     gt_samples = set(os.listdir(gt_path))
     pd_samples = set(os.listdir(pd_path))
-    gt_samples_ids = [s.split(SEMANTIC_SEG_PATTERN)[0] for s in gt_samples if "__sem__" in s]
-    gt_ext = [s.split(SEMANTIC_SEG_PATTERN)[1] for s in gt_samples if "__sem__" in s][0]
-    pd_samples_ids = [s.split(SEMANTIC_SEG_PATTERN)[0] for s in pd_samples if "__sem__" in s]
-    pd_ext = [s.split(SEMANTIC_SEG_PATTERN)[1] for s in pd_samples if "__sem__" in s][0]
+    gt_samples_ids = [s.split(".")[0] for s in gt_samples if ".in.nrrd" in s]
+    pd_samples_ids = [s.split(".")[0] for s in pd_samples if ".in.nrrd" in s]
     assert set(gt_samples_ids) == set(pd_samples_ids), "PatientIDs differ from GT to PD!"
     gt_path = Path(gt_path)  # make sure its a path
     pd_path = Path(pd_path)  # make sure its a path
-    all_instance_pairs: list[InstancePair] = []
+    all_instance_pairs: list[PredGTPair] = []
     for gt, pd in zip(sorted(gt_samples_ids), sorted(pd_samples_ids)):
-        sem_gt_path = gt_path / (gt + SEMANTIC_SEG_PATTERN + gt_ext)
-        sem_pd_path = pd_path / (pd + SEMANTIC_SEG_PATTERN + pd_ext)
-        instance_gt_path = gt_path / (gt + INSTANCE_SEG_PATTERN + gt_ext)
-        instance_pd_path = pd_path / (pd + INSTANCE_SEG_PATTERN + pd_ext)
-        assert sem_gt_path.exists(), f"Semantic GT path {sem_gt_path} does not exist."
-        assert sem_pd_path.exists(), f"Semantic PD path {sem_pd_path} does not exist."
+        instance_gt_path = gt_path / (gt + ".in.nrrd")
+        instance_pd_path = pd_path / (pd + ".in.nrrd")
         assert instance_gt_path.exists(), f"Instance GT path {instance_gt_path} does not exist."
         assert instance_pd_path.exists(), f"Instance PD path {instance_pd_path} does not exist."
         all_instance_pairs.append(
-            InstancePair(
-                instance_pd_p=instance_pd_path,
-                instance_gt_p=instance_gt_path,
-                semantic_gt_p=sem_gt_path,
-                semantic_pd_p=sem_pd_path,
+            PredGTPair(
+                pd_p=instance_pd_path,
+                gt_p=instance_gt_path,
             )
         )
     return all_instance_pairs

@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 import numpy as np
-from nneval.utils.datastructures import SemanticPair
+from nneval.utils.datastructures import PredGTPair
 from monai import metrics
 import SimpleITK as sitk
 
@@ -20,19 +20,19 @@ MULTI_CASE_IDs = ["case_1_6608269.nii.gz", "case_2_6740938.nii.gz", "case_3_5386
 
 def get_single_semantic_pair(case_id: int):
     expected_semantic_pair = [
-        SemanticPair(pd_p=SINGLE_CLASS_PD / case_id, gt_p=SINGLE_CLASS_GT / case_id) for case_id in SINGLE_CASE_IDs
+        PredGTPair(pd_p=SINGLE_CLASS_PD / case_id, gt_p=SINGLE_CLASS_GT / case_id) for case_id in SINGLE_CASE_IDs
     ]
     return expected_semantic_pair[case_id]
 
 
 def get_multi_semantic_pair(case_id: int):
     expected_semantic_pair = [
-        SemanticPair(pd_p=MULTI_CLASS_PD / case_id, gt_p=MULTI_CLASS_GT / case_id) for case_id in MULTI_CASE_IDs
+        PredGTPair(pd_p=MULTI_CLASS_PD / case_id, gt_p=MULTI_CLASS_GT / case_id) for case_id in MULTI_CASE_IDs
     ]
     return expected_semantic_pair[case_id]
 
 
-def get_multiclass_compatible_pd_gt(semantic_pair: SemanticPair, class_ids_to_evaluate: Sequence[int]):
+def get_multiclass_compatible_pd_gt(semantic_pair: PredGTPair, class_ids_to_evaluate: Sequence[int]):
     pd_arr = sitk.GetArrayFromImage(sitk.ReadImage(semantic_pair.pd_p))
     gt_arr = sitk.GetArrayFromImage(sitk.ReadImage(semantic_pair.gt_p))
 
