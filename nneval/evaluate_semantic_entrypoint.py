@@ -21,10 +21,12 @@ def semantic_evaluation_entrypoint():
     None
     """
     parser = ArgumentParser()
-    parser.add_argument("--semantic_pd_path", type=Path, required=True, help="Path to predictions")
-    parser.add_argument("--semantic_gt_path", type=Path, required=True, help="Path to groundtruth")
-    parser.add_argument("--classes_of_interest", type=int, nargs="+", default=(1,), help="Classes to evaluate")
-    parser.add_argument("--output_path", type=Path, required=True)
+    parser.add_argument("-pd", "--semantic_pd_path", type=Path, required=True, help="Path to predictions")
+    parser.add_argument("-gt", "--semantic_gt_path", type=Path, required=True, help="Path to groundtruth")
+    parser.add_argument(
+        "-cls", "--classes_of_interest", type=int, nargs="+", default=(1,), help="Classes to evaluate"
+    )
+    parser.add_argument("-o", "--output_path", type=Path, required=True)
     args = parser.parse_args()
 
     # if args.output_path is None:
