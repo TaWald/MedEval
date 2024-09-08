@@ -1,19 +1,17 @@
 from copy import deepcopy
 from functools import partial
 from itertools import chain, groupby
-import pandas as pd
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map  # or thread_map
 from dataclasses import fields
 
-from time import time
 from typing import Dict, Iterable, List, Sequence
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment as lsa
-import SimpleITK as sitk
+from toinstance import InstanceNrrd
 
-from nneval.utils.datastructures import Instance, InstancePair, InstanceResult, LesionwiseCasewiseResult
+from nneval.utils.datastructures import Instance, PredGTPair, InstanceResult, LesionwiseCasewiseResult
 from nneval.utils.default_values import (
     no_groundtruth_but_prediction,
     no_prediction_but_groundtruth,
@@ -110,8 +108,6 @@ def lesion_wise_case_wise_averaging(vals: Iterable[InstanceResult]):
 def compare_all_instance_of_same_class(
     predictions: list[Instance],
     groundtruths: list[Instance],
-    flat_pd_npy: np.ndarray,
-    flat_gt_npy: np.ndarray,
 ):
     """
     Compares all prediction to all groundtruth instances.
@@ -139,9 +135,9 @@ def compare_all_instance_of_same_class(
     for gt_idx, cur_gt in enumerate(groundtruths):
         # Actually accessing this one by one is faster than doing it in a big
         # batch, because why the fuck not ??!?!??!
-        current_gt = flat_gt_npy == cur_gt.index
+        current_gt = cur_gt.bin_map
         for pd_idx, cur_pd in enumerate(predictions):
-            current_pd = flat_pd_npy == cur_pd.index
+            current_pd = cur_pd.bin_map
             union = np.count_nonzero(current_gt | current_pd)
             intersect = np.count_nonzero(current_gt & current_pd)
             precision = intersect / cur_pd.voxels
@@ -275,7 +271,7 @@ def instance_id_to_semantic_class_id(semantic_map: np.ndarray, instance_map: np.
 
 
 def evaluate_instance_result(
-    instance_pair: InstancePair,
+    instance_pair: PredGTPair,
     dice_threshold: float = 0.1,
     volume_threshold: float = 0,
     semantic_classes: Sequence[int] = (1,),
@@ -287,20 +283,16 @@ def evaluate_instance_result(
     :return: List of matched predictions and List of matched groundtruths
     """
 
-    semantic_pd: sitk.Image = sitk.ReadImage(str(instance_pair.semantic_pd_p))
-    semantic_gt: sitk.Image = sitk.ReadImage(str(instance_pair.semantic_gt_p))
-    instance_pd: sitk.Image = sitk.ReadImage(str(instance_pair.instance_pd_p))
-    instance_gt: sitk.Image = sitk.ReadImage(str(instance_pair.instance_gt_p))
+    instance_pd: InstanceNrrd = InstanceNrrd.from_innrrd(instance_pair.pd_p)
+    instance_gt: InstanceNrrd = InstanceNrrd.from_innrrd(instance_pair.gt_p)
 
-    sem_pd_arr: np.ndarray = sitk.GetArrayFromImage(semantic_pd)
-    sem_gt_arr: np.ndarray = sitk.GetArrayFromImage(semantic_gt)
-    ins_pd_arr: np.ndarray = sitk.GetArrayFromImage(instance_pd)
-    ins_gt_arr: np.ndarray = sitk.GetArrayFromImage(instance_gt)
+    ins_pd_arr: dict[int, list[np.ndarray]] = instance_pd.get_semantic_instance_maps()
+    ins_gt_arr: dict[int, list[np.ndarray]] = instance_gt.get_semantic_instance_maps()
 
-    spacing = semantic_pd.GetSpacing()
-    dimensions = sem_pd_arr.shape
+    spacing = instance_pd.get_spacing()
+    dimensions = instance_pd.get_size()
 
-    sample_name: str = instance_pair.semantic_pd_p.name
+    sample_name: str = instance_pair.pd_p.name.split(".")[0]
 
     # read images, discard where both images are background (most of the image)
     # ~100x Speedup by doing this (will depend on sparsity)
@@ -308,28 +300,29 @@ def evaluate_instance_result(
     # If neither gt nor pd values exist for this sample.
     all_matches: list[InstanceResult] = []
     for cls_id in semantic_classes:
-        semantic_area_relevant = (sem_pd_arr == cls_id) | (sem_gt_arr == cls_id)
+        pd_instances: list[np.ndarray] = ins_pd_arr[cls_id]
+        gt_instances: list[np.ndarray] = ins_gt_arr[cls_id]
 
-        remaining_pd_instances = ins_pd_arr[semantic_area_relevant]
-        remaining_gt_instances = ins_gt_arr[semantic_area_relevant]
+        # We remove all voxels that are zero for all groundtruths and predictions as they don't matter.
+        sem_area_rel = np.sum(pd_instances, axis=0) != 0 | np.sum(gt_instances, axis=0) != 0
 
-        pd_instances = np.unique(remaining_pd_instances, return_counts=True)
-        gt_instance = np.unique(remaining_gt_instances, return_counts=True)
-
-        predictions: list[Instance] = [
-            Instance(index=index, voxels=size) for index, size in zip(pd_instances[0], pd_instances[1]) if index != 0
-        ]
-        groundtruths: list[Instance] = [
-            Instance(index=index, voxels=size) for index, size in zip(gt_instance[0], gt_instance[1]) if index != 0
-        ]
+        predictions: list[Instance] = []
+        for cnt, pd_inst in enumerate(pd_instances):
+            relevant_arr = pd_inst[sem_area_rel]
+            voxels = np.sum(relevant_arr)
+            predictions.append(Instance(index=cnt, voxels=voxels, bin_map=relevant_arr))
 
         predictions = [pred for pred in predictions if (pred.voxels * np.prod(spacing)) >= volume_threshold]
+
+        groundtruths: list[Instance] = []
+        for cnt, gt_inst in enumerate(gt_instances):
+            relevant_arr = gt_inst[sem_area_rel]
+            voxels = np.sum(relevant_arr)
+            groundtruths.append(Instance(index=cnt, voxels=voxels, bin_map=relevant_arr))
 
         all_to_all_comp = compare_all_instance_of_same_class(
             predictions=predictions,
             groundtruths=groundtruths,
-            flat_pd_npy=remaining_pd_instances,
-            flat_gt_npy=remaining_gt_instances,
         )
         one2one_matches: list[InstanceResult] = match_instances(
             predictions=predictions,
@@ -348,7 +341,7 @@ def evaluate_instance_result(
 
 
 def evaluate_instance_results(
-    instance_pair: list[InstancePair],
+    instance_pair: list[PredGTPair],
     dice_threshold: float = 0.1,
     volume_threshold: float = 0,
     semantic_classes: Sequence[int] = (1,),

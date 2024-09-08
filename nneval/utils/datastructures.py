@@ -5,17 +5,9 @@ import numpy as np
 
 
 @dataclass(frozen=True)  # Allows hashing
-class SemanticPair:
+class PredGTPair:
     pd_p: Path  # Full path to prediction
     gt_p: Path  # Full path to groundtruth
-
-
-@dataclass
-class InstancePair:
-    semantic_pd_p: Path  # Full path to prediction
-    instance_pd_p: Path
-    semantic_gt_p: Path  # Full path to groundtruth
-    instance_gt_p: Path  # Full path to groundtruth
 
 
 @dataclass
@@ -170,3 +162,4 @@ class LesionwiseCasewiseResult:
 class Instance:
     index: int
     voxels: int
+    bin_map: np.ndarray

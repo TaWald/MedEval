@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from nneval.utils.datastructures import SemanticPair, SemanticResult
+from nneval.utils.datastructures import PredGTPair, SemanticResult
 from nneval.utils.io import get_array_from_image
 from nneval.utils.parser import get_samplewise_eval_parser
 from tqdm.contrib.concurrent import process_map  # or thread_map
@@ -176,7 +176,7 @@ def get_samplewise_statistics(
 
 
 def evaluate_semantic_results(
-    sem_pairs: list[SemanticPair],
+    sem_pairs: list[PredGTPair],
     class_ids_to_evaluate: Sequence[int],
     n_processes: int = 1,
 ) -> list[SemanticResult]:
@@ -255,7 +255,7 @@ def _semantic_classwise_eval(gt_arr: np.ndarray, pd_arr: np.ndarray, class_id: i
 
 
 def semantic_evaluate_case_sempair(
-    semantic_pair: SemanticPair, class_of_interests: Sequence[int] = (1,)
+    semantic_pair: PredGTPair, class_of_interests: Sequence[int] = (1,)
 ) -> list[SemanticResult]:
     """Additional interface to start semantic_evaluate_case with a SemanticPair object."""
     semantic_pd_path = semantic_pair.pd_p
