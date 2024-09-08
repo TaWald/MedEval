@@ -81,48 +81,37 @@ def get_default_output_path(prediction_path: Path) -> Path:
     return out_path
 
 
-def get_matching_semantic_pairs(gt_path: Path | str, pd_path: Path | str) -> list[PredGTPair]:
-    """
-    Finds the matching prediction instance to groundtruth instances in the provided paths.
-    If not all groundtruth instances have a matching prediction instance raises an AssertionError.
-    """
+def _get_matching_pairs(gt_path: Path | str, pd_path: Path | str, patterns: tuple[str]) -> list[PredGTPair]:
     pd_path = Path(pd_path)
     gt_path = Path(gt_path)
 
     gt_sample_ids = set(os.listdir(gt_path))
-    gt_sample_ids = list(sorted([x for x in gt_sample_ids if x.endswith(SUPPORTED_EXTENSIONS)]))
+    gt_sample_ids = list(sorted([x for x in gt_sample_ids if x.endswith(patterns)]))
 
     pd_sample_ids = set(os.listdir(pd_path))
-    pd_sample_ids = list(sorted([x for x in pd_sample_ids if x.endswith(SUPPORTED_EXTENSIONS)]))
+    pd_sample_ids = list(sorted([x for x in pd_sample_ids if x.endswith(patterns)]))
 
-    pd_wo_ext = [x for x in pd_sample_ids]
-    gt_wo_ext = [x for x in gt_sample_ids]
+    pd_wo_ext = [x.split(".")[0] for x in pd_sample_ids]
+    gt_wo_ext = [x.split(".")[0] for x in gt_sample_ids]
     assert set(pd_wo_ext) == set(gt_wo_ext), "PatientIDs differ from GT to PD!"
 
     return list([PredGTPair(pd_p=pd_path / x, gt_p=gt_path / x) for x in gt_wo_ext])
 
 
+def get_matching_semantic_pairs(gt_path: Path | str, pd_path: Path | str) -> list[PredGTPair]:
+    """
+    Finds the matching prediction instance to groundtruth instances in the provided paths.
+    If not all groundtruth instances have a matching prediction instance raises an AssertionError.
+    """
+
+    return _get_matching_pairs(gt_path=gt_path, pd_path=pd_path, patterns=SUPPORTED_EXTENSIONS)
+
+
 def get_matching_instance_pairs(gt_path: Path | str, pd_path: Path | str) -> list[PredGTPair]:
-    gt_samples = set(os.listdir(gt_path))
-    pd_samples = set(os.listdir(pd_path))
-    gt_samples_ids = [s.split(".")[0] for s in gt_samples if ".in.nrrd" in s]
-    pd_samples_ids = [s.split(".")[0] for s in pd_samples if ".in.nrrd" in s]
-    assert set(gt_samples_ids) == set(pd_samples_ids), "PatientIDs differ from GT to PD!"
-    gt_path = Path(gt_path)  # make sure its a path
-    pd_path = Path(pd_path)  # make sure its a path
-    all_instance_pairs: list[PredGTPair] = []
-    for gt, pd in zip(sorted(gt_samples_ids), sorted(pd_samples_ids)):
-        instance_gt_path = gt_path / (gt + ".in.nrrd")
-        instance_pd_path = pd_path / (pd + ".in.nrrd")
-        assert instance_gt_path.exists(), f"Instance GT path {instance_gt_path} does not exist."
-        assert instance_pd_path.exists(), f"Instance PD path {instance_pd_path} does not exist."
-        all_instance_pairs.append(
-            PredGTPair(
-                pd_p=instance_pd_path,
-                gt_p=instance_gt_path,
-            )
-        )
-    return all_instance_pairs
+    """
+    Gets in.nrrd files from the paths and returns the matching pairs.
+    """
+    return _get_matching_pairs(gt_path=gt_path, pd_path=pd_path, patterns=("in.nrrd",))
 
 
 def export_results(results: list[SemanticResult | InstanceResult], output_path: Path, output_name: str | None = None):
