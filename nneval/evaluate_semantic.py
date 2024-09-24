@@ -1,17 +1,21 @@
 from pathlib import Path
 from typing import Sequence
 
-from nneval.evaluate.semantic_eval import evaluate_semantic_results, get_samplewise_statistics
-from nneval.utils.datastructures import SemanticResult
-from nneval.utils.io import export_results, get_matching_semantic_pairs, save_json, get_default_output_path
 from loguru import logger
+from nneval.evaluate.semantic_eval import evaluate_semantic_results
+from nneval.evaluate.semantic_eval import get_samplewise_statistics
+from nneval.utils.datastructures import SemanticResult
+from nneval.utils.io import export_results
+from nneval.utils.io import get_default_output_path
+from nneval.utils.io import get_matching_semantic_pairs
+from nneval.utils.io import save_json
 
 
 def semantic_evaluation(
     semantic_pd_path: Path | str,
     semantic_gt_path: str | Path,
     output_path: str | Path,
-    classes_of_interest: Sequence[int] = (1),
+    classes_of_interest: Sequence[int | Sequence[int]] = (1),
     save_to_disk: bool = True,
     output_name: str | None = None,
 ) -> tuple[dict, list[SemanticResult]]:
@@ -38,11 +42,11 @@ def semantic_evaluation(
     logger.info(f"Found {len(semantic_pairs)} matching semantic pairs to evaluate.")
     # ----------- Evaluate Cases for all class ids and collect metrics ----------- #
     logger.info("Evaluating all semantic values.")
-    eval: list[SemanticResult] = evaluate_semantic_results(semantic_pairs, classes_of_interest)
+    eval: list[SemanticResult] = evaluate_semantic_results(semantic_pairs, classes_of_interest, 1)
     # ------------------------- Save the results ------------------------- #
     output_path.mkdir(parents=True, exist_ok=True)
     export_results(eval, output_path, output_name)
-    aggregated_results = get_samplewise_statistics(eval)
+    aggregated_results = get_samplewise_statistics(eval, classes_of_interest)
     if save_to_disk:
         if output_name is None:
             save_json(aggregated_results, output_path / "semantic_results_aggregated.json")
