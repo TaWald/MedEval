@@ -18,6 +18,7 @@ def semantic_evaluation(
     classes_of_interest: Sequence[int | Sequence[int]] = (1),
     save_to_disk: bool = True,
     output_name: str | None = None,
+    n_processes: int = 1,
 ) -> tuple[dict, list[SemanticResult]]:
     """
     Evaluate the semantic results by comparing the predicted semantic labels with the ground truth labels.
@@ -42,7 +43,9 @@ def semantic_evaluation(
     logger.info(f"Found {len(semantic_pairs)} matching semantic pairs to evaluate.")
     # ----------- Evaluate Cases for all class ids and collect metrics ----------- #
     logger.info("Evaluating all semantic values.")
-    eval: list[SemanticResult] = evaluate_semantic_results(semantic_pairs, classes_of_interest, 1)
+    eval: list[SemanticResult] = evaluate_semantic_results(
+        semantic_pairs, classes_of_interest, n_processes=n_processes
+    )
     # ------------------------- Save the results ------------------------- #
     output_path.mkdir(parents=True, exist_ok=True)
     export_results(eval, output_path, output_name)
