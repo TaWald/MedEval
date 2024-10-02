@@ -17,7 +17,7 @@ def instance_evaluation(
     output_path: str | Path,
     classes_of_interest: Sequence[int] = (1),
     dice_threshold=0.1,
-    n_processes: int = 1,
+    n_processes: int = 0,
 ):
 
     instance_pd_path = Path(instance_pd_path)
