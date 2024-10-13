@@ -1,9 +1,14 @@
 from dataclasses import asdict
 from pathlib import Path
 from typing import Sequence
-from nneval.evaluate.instance_eval import aggregate_lesion_wise_case_wise_metrics, evaluate_instance_results, get_samplewise_instance_wise_statistics
+
+from nneval.evaluate.instance_eval import aggregate_lesion_wise_case_wise_metrics
+from nneval.evaluate.instance_eval import evaluate_instance_results
+from nneval.evaluate.instance_eval import get_samplewise_instance_wise_statistics
 from nneval.utils.datastructures import InstanceResult
-from nneval.utils.io import export_results, get_matching_instance_pairs, save_json
+from nneval.utils.io import export_results
+from nneval.utils.io import get_matching_instance_pairs
+from nneval.utils.io import save_json
 
 
 def instance_evaluation(
@@ -12,6 +17,7 @@ def instance_evaluation(
     output_path: str | Path,
     classes_of_interest: Sequence[int] = (1),
     dice_threshold=0.1,
+    n_processes: int = 1,
 ):
 
     instance_pd_path = Path(instance_pd_path)
@@ -25,7 +31,7 @@ def instance_evaluation(
         instance_pair=instance_pairs,
         dice_threshold=dice_threshold,
         semantic_classes=classes_of_interest,
-        num_processes=1,
+        num_processes=n_processes,
     )
     # ------------------------- Save the results ------------------------- #
     export_results(eval, output_path)

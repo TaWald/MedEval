@@ -22,7 +22,8 @@ dependencies = [
     'monai',
     'tqdm',
     'loguru',
-    'pyyaml'
+    'pyyaml',
+    'surface-distance'
 ]
 
 readme = "README.md"

@@ -1,6 +1,10 @@
-from dataclasses import field, dataclass, asdict
+from dataclasses import asdict
+from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
-from typing import Sequence, Tuple
+from typing import Sequence
+from typing import Tuple
+
 import numpy as np
 
 
@@ -14,13 +18,14 @@ class PredGTPair:
 class SemanticResult:
     dice: float
     iou: float
+    surface_dice: float
     precision: float
     recall: float
     gt_voxels: int
     pd_voxels: int
     union_voxels: int
     intersection_voxels: int
-    class_id: int
+    class_id: int | Sequence[int]
     case_id: str = field(init=False)
     volume_per_voxel: float = field(init=False)
     pd_volume: float = field(init=False)

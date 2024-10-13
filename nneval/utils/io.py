@@ -1,15 +1,18 @@
+import json
 import os
 from pathlib import Path
-import SimpleITK as sitk
+
 import numpy as np
-import json
-
-import yaml
-from nneval.utils.datastructures import PredGTPair
-
-from nneval.utils.datastructures import InstanceResult, SemanticResult
 import pandas as pd
-from nneval.utils.naming_conventions import INSTANCE_SEG_PATTERN, SEMANTIC_SEG_PATTERN, SUPPORTED_EXTENSIONS
+import SimpleITK as sitk
+import yaml
+from loguru import logger
+from nneval.utils.datastructures import InstanceResult
+from nneval.utils.datastructures import PredGTPair
+from nneval.utils.datastructures import SemanticResult
+from nneval.utils.naming_conventions import INSTANCE_SEG_PATTERN
+from nneval.utils.naming_conventions import SEMANTIC_SEG_PATTERN
+from nneval.utils.naming_conventions import SUPPORTED_EXTENSIONS
 
 
 def write_dict_to_json(data: dict, filepath: str):
@@ -94,7 +97,10 @@ def _get_matching_pairs(gt_path: Path | str, pd_path: Path | str, patterns: tupl
     pd_wo_ext = [x.split(".")[0] for x in pd_sample_ids]
     gt_wo_ext = [x.split(".")[0] for x in gt_sample_ids]
     ext = pd_sample_ids[0][pd_sample_ids[0].find(".") :]
-    assert set(pd_wo_ext) == set(gt_wo_ext), "PatientIDs differ from GT to PD!"
+    assert set(pd_wo_ext).issubset(set(gt_wo_ext)), "Not all PD instances have a matching GT instance!"
+    if set(pd_wo_ext) != set(gt_wo_ext):
+        logger.warning("PatientIDs differ from GT to PD! Only using matching instances.")
+        gt_wo_ext = set(pd_wo_ext).intersection(set(gt_wo_ext))
 
     return list([PredGTPair(pd_p=pd_path / (x + ext), gt_p=gt_path / (x + ext)) for x in gt_wo_ext])
 

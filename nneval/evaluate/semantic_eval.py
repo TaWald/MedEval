@@ -1,21 +1,35 @@
+import os
+import sys
 from functools import partial
 from itertools import chain
 from multiprocessing import Pool
-import os
 from pathlib import Path
-import sys
 from typing import Sequence
 
-import SimpleITK as sitk
-from loguru import logger
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
-
-from nneval.utils.datastructures import PredGTPair, SemanticResult
+import SimpleITK as sitk
+from loguru import logger
+from nneval.utils.datastructures import PredGTPair
+from nneval.utils.datastructures import SemanticResult
 from nneval.utils.io import get_array_from_image
+from nneval.utils.io import get_matching_semantic_pairs
 from nneval.utils.parser import get_samplewise_eval_parser
+from scipy.stats import norm
+from surface_distance import compute_surface_dice_at_tolerance
+from surface_distance import compute_surface_distances
 from tqdm.contrib.concurrent import process_map  # or thread_map
+
+
+def calculate_surface_distances(gt_array: np.ndarray, pd_array: np.ndarray, spacing: np.ndarray):
+    """
+    Calculate the surface distances between the ground truth and the prediction.
+    """
+    # Calculate the surface distances
+    surface_distances = compute_surface_distances(gt_array, pd_array, spacing)
+    # Calculate the surface dice
+    surface_dice = compute_surface_dice_at_tolerance(surface_distances, 2)
+    return surface_dice
 
 
 def samplewise_eval(
@@ -24,18 +38,25 @@ def samplewise_eval(
     pd_array: np.ndarray,
     pd_class_of_interest: int,
     sample_name: str,
-    vol_per_voxel: float = 1.0,
+    spacing: np.ndarray,
 ) -> dict:
-    gt_flat = np.reshape(gt_array, newshape=[-1])
-    pd_flat = np.reshape(pd_array, newshape=[-1])
 
-    gt_bool_npy = gt_flat == gt_class_of_interest
-    pd_bool_npy = pd_flat == pd_class_of_interest
+    vol_per_voxel = float(np.prod(spacing))  # in mm³
 
-    #### Has to remove the instances where the prediction instance volume is smaller
+    gt_bool_npy = gt_array == gt_class_of_interest
+    pd_bool_npy = pd_array == pd_class_of_interest
+
+    # --------------------------- Do surface distances --------------------------- #
+
+    surface_dice_at_2mm_tol = calculate_surface_distances(gt_bool_npy, pd_bool_npy, spacing=spacing)
+
+    gt_flat = np.reshape(gt_bool_npy, newshape=[-1])
+    pd_flat = np.reshape(pd_bool_npy, newshape=[-1])
+
+    # Has to remove the instances where the prediction instance volume is smaller
     # than the threshold (only noticeable for bigger filter thresholds)
 
-    joined_npy = np.logical_or(gt_bool_npy, pd_bool_npy)  # Where either of them is not background!
+    joined_npy = np.logical_or(gt_flat, pd_flat)  # Where either of them is not background!
 
     gt_bool_npy = gt_bool_npy[joined_npy]
     pd_bool_npy = pd_bool_npy[joined_npy]
@@ -72,6 +93,7 @@ def samplewise_eval(
         precision=precision,
         dice=dice,
         iou=iou,
+        surface_dice_at_2mm_tol=surface_dice_at_2mm_tol,
         pd_segmentation_class=pd_class_of_interest,
         gt_segmentation_class=gt_class_of_interest,
         gt_volume_mm3=gt_voxels * vol_per_voxel,
@@ -133,6 +155,15 @@ def get_samplewise_statistics(
                     "q2": float(np.nanquantile([entry.iou for entry in res_oi], 0.5)),
                     "q3": float(np.nanquantile([entry.iou for entry in res_oi], 0.75)),
                 },
+                "surface_dice": {
+                    "mean": float(np.nanmean([entry.surface_dice for entry in res_oi])),
+                    "std": float(np.nanstd([entry.surface_dice for entry in res_oi])),
+                    "lower_CI95": confidence_intervals([entry.surface_dice for entry in res_oi])[0],
+                    "upper_CI95": confidence_intervals([entry.surface_dice for entry in res_oi])[1],
+                    "q1": float(np.nanquantile([entry.surface_dice for entry in res_oi], 0.25)),
+                    "q2": float(np.nanquantile([entry.surface_dice for entry in res_oi], 0.5)),
+                    "q3": float(np.nanquantile([entry.surface_dice for entry in res_oi], 0.75)),
+                },
                 "gt_volume_mm3": {
                     "mean": float(np.nanmean([entry.gt_volume for entry in res_oi])),
                     "lower_CI95": confidence_intervals([entry.gt_volume for entry in res_oi])[0],
@@ -177,7 +208,7 @@ def get_samplewise_statistics(
 
 def evaluate_semantic_results(
     sem_pairs: list[PredGTPair],
-    class_ids_to_evaluate: Sequence[int],
+    class_ids_to_evaluate: Sequence[int | Sequence[int]],
     n_processes: int = 1,
 ) -> list[SemanticResult]:
     logger.info("Starting unresampled casewise evaluation.")
@@ -197,15 +228,24 @@ def evaluate_semantic_results(
     return samplewise_results
 
 
-def _semantic_classwise_eval(gt_arr: np.ndarray, pd_arr: np.ndarray, class_id: int) -> SemanticResult:
+def _semantic_classwise_eval(
+    gt_arr: np.ndarray, pd_arr: np.ndarray, class_id: int | Sequence[int], spacing: np.ndarray
+) -> SemanticResult:
     """Calculates key semantic_metrics that will be saved into a large file later."""
-    gt_flat = np.reshape(gt_arr, newshape=[-1])
-    pd_flat = np.reshape(pd_arr, newshape=[-1])
 
-    gt_bool_npy = gt_flat == class_id
-    pd_bool_npy = pd_flat == class_id
+    # We allow regions as well as single classes.
+    gt_bool = np.isin(gt_arr, class_id)
+    pd_bool = np.isin(pd_arr, class_id)
 
-    #### Has to remove the instances where the prediction instance volume is smaller
+    # --------------------------- Do surface distances --------------------------- #
+    surface_dice_at_2mm_tol = calculate_surface_distances(gt_bool, pd_bool, spacing=spacing)
+
+    # ---------------------------- Do standard metrics --------------------------- #
+
+    gt_bool_npy = np.reshape(gt_bool, newshape=[-1])
+    pd_bool_npy = np.reshape(pd_bool, newshape=[-1])
+
+    # Has to remove the instances where the prediction instance volume is smaller
     # than the threshold (only noticeable for bigger filter thresholds)
 
     joined_npy = np.logical_or(gt_bool_npy, pd_bool_npy)  # Where either of them is not background!
@@ -224,9 +264,9 @@ def _semantic_classwise_eval(gt_arr: np.ndarray, pd_arr: np.ndarray, class_id: i
     else:
         dice = np.NAN
         iou = np.NAN
-        logger.warning("Right now we make dice and iou 1 if no foreground and no prediction")
-        dice = 1
-        iou = 1
+        # logger.warning("Right now we make dice and iou 1 if no foreground and no prediction")
+        # dice = 1
+        # iou = 1
 
     if gt_voxels != 0:
         recall = intersection_voxels / gt_voxels
@@ -244,6 +284,7 @@ def _semantic_classwise_eval(gt_arr: np.ndarray, pd_arr: np.ndarray, class_id: i
     return SemanticResult(
         dice=dice,
         iou=iou,
+        surface_dice=surface_dice_at_2mm_tol,
         precision=precision,
         recall=recall,
         gt_voxels=gt_voxels,
@@ -255,7 +296,7 @@ def _semantic_classwise_eval(gt_arr: np.ndarray, pd_arr: np.ndarray, class_id: i
 
 
 def semantic_evaluate_case_sempair(
-    semantic_pair: PredGTPair, class_of_interests: Sequence[int] = (1,)
+    semantic_pair: PredGTPair, class_of_interests: Sequence[int | Sequence[int]] = (1,)
 ) -> list[SemanticResult]:
     """Additional interface to start semantic_evaluate_case with a SemanticPair object."""
     semantic_pd_path = semantic_pair.pd_p
@@ -266,7 +307,7 @@ def semantic_evaluate_case_sempair(
 def semantic_evaluate_case(
     semantic_pd_path: Path,
     semantic_gt_path: Path,
-    class_of_interests: Sequence[int] = (1,),
+    class_of_interests: Sequence[int | Sequence[int]] = (1,),
 ) -> list[SemanticResult]:
     """
     Evaluates a single case for all semantic classes and returns a dictionary containing all metrics for this case.
@@ -297,7 +338,7 @@ def semantic_evaluate_case(
 
     all_results: list[SemanticResult] = []
     for class_id in class_of_interests:
-        semantic_eval: SemanticResult = _semantic_classwise_eval(gt_npy, pd_npy, class_id)
+        semantic_eval: SemanticResult = _semantic_classwise_eval(gt_npy, pd_npy, class_id, gt_spacing)
         semantic_eval.add_volume_per_voxel(vol_factor)
         semantic_eval.case_id = case_id
         semantic_eval.spacing = gt_spacing
@@ -333,8 +374,6 @@ def samplewise_result(
 
     assert np.all(np.isclose(gt_spacing, pd_spacing)), "Not equal spacing"
 
-    vol_factor = float(np.prod(gt_spacing))  # in mm³
-
     gt_npy = get_array_from_image(gt_sample_path)
     pd_npy = get_array_from_image(pd_sample_path)
 
@@ -344,7 +383,7 @@ def samplewise_result(
         pd_array=pd_npy,
         pd_class_of_interest=pd_class_of_interest,
         sample_name=sample_name,
-        vol_per_voxel=vol_factor,
+        spacing=gt_spacing,
     )
 
 
@@ -359,7 +398,7 @@ if __name__ == "__main__":
         out_path = pd_path
 
     results = []
-    sorted_ids = get_matching_gt_and_preds(gt_path, pd_path)
+    sorted_ids = get_matching_semantic_pairs(gt_path, pd_path)
     for patient in sorted_ids:
         for c in cls_of_interest:
             patient_result = {"patient_id": patient, "class_id": c}

@@ -12,3 +12,4 @@ records
 *.pytest_cache
 *.tex
 *nnunet_interfacing
+*.json
