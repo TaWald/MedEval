@@ -10,3 +10,5 @@ records
 *._.DS_Store
 *build
 *.pytest_cache
+*.tex
+*nnunet_interfacing
